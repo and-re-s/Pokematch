@@ -1,6 +1,8 @@
 const pokeAPIBaseUrl = "https://pokeapi.co/api/v2/pokemon/";
 const game = document.querySelector(".game");
+const selector = document.querySelector(".selector");
 
+let numOfPokemons;
 let isPaused = false;
 let firstPick;
 let matches;
@@ -22,17 +24,21 @@ const colors = {
   normal: "#F5F5F5",
 };
 
-async function loadPokemons() {
-  const randomPokemonIds = generateRandomIds();
+function redrawBoard(size = selector.value) {
+  resetGame(size);
+}
+
+async function loadPokemons(amount) {
+  const randomPokemonIds = generateRandomIds(amount);
 
   const pokePromises = randomPokemonIds.map((id) => fetch(pokeAPIBaseUrl + id));
   const responses = await Promise.all(pokePromises);
   return await Promise.all(responses.map((res) => res.json()));
 }
 
-function generateRandomIds() {
+function generateRandomIds(amountOfCards) {
   const randomIds = new Set();
-  while (randomIds.size < 8) {
+  while (randomIds.size < amountOfCards) {
     const randomNumber = Math.ceil(Math.random() * 150);
     randomIds.add(randomNumber);
   }
@@ -41,25 +47,39 @@ function generateRandomIds() {
 
 function displayPokemons(pokemons) {
   pokemons.sort(() => Math.random() - 0.5);
+  if (numOfPokemons === 12) {
+    pokemons.splice(12, 0, pokemons[11]);
+  }
   const pokemonsHTML = pokemons
-    .map((pokemon) => {
+    .map((pokemon, index) => {
       const type = pokemon.types[0].type.name || "normal";
       const color = colors[type];
-      return `
-        <div class="card" style="background-color:${color}" onclick="clickCard(event)" data-pokename="${
+      const emptyMidCard5x5Board = `
+      <div class="empyMidCard">
+      </div>`;
+      let pokeCard = `
+      <div class="card" style="background-color:${color}" onclick="clickCard(event)" data-pokename="${
         pokemon.name
       }">
-            <div class="front"></div>
-            <div class="back rotated" style="background-color:${color}">
-            <img src="${pokemon.sprites.front_default}" alt=${pokemon.name}/>
-            <h2>${pokemon.name[0].toLocaleUpperCase()}${pokemon.name.slice(
+          <div class="front"></div>
+          <div class="back rotated" style="background-color:${color}">
+          <img src="${pokemon.sprites.front_default}" alt=${
+        pokemon.name
+      } style="width:70%;"/>
+          <h2>${pokemon.name[0].toLocaleUpperCase()}${pokemon.name.slice(
         1
       )}</h2>
-            </div>
-        </div>
-    `;
+          </div>
+      </div>
+  `;
+      if (numOfPokemons === 12 && index === 12) return emptyMidCard5x5Board;
+      return pokeCard;
     })
     .join("");
+  game.setAttribute(
+    "style",
+    `grid-template-columns: repeat(${selector.value}, 175px); grid-template-rows: repeat(${selector.value}, 175px);`
+  );
   game.innerHTML = pokemonsHTML;
 }
 
@@ -89,7 +109,7 @@ function clickCard(event) {
       }, 500);
     } else {
       matches += 1;
-      if (matches === 8) {
+      if (matches === numOfPokemons) {
         console.log("winner");
       }
       firstPick = null;
@@ -109,16 +129,26 @@ function getFrontAndBackOfCard(card) {
   return [front, back];
 }
 
-function resetGame() {
+function resetGame(boardSize = selector.value) {
   game.innerHTML = "";
   isPaused = true;
   firstPick = null;
   matches = 0;
+
+  if (boardSize === "4") numOfPokemons = 8;
+  if (boardSize === "5") numOfPokemons = 12;
+  if (boardSize === "6") numOfPokemons = 18;
+
   setTimeout(async () => {
-    const pokemons = await loadPokemons();
+    const pokemons = await loadPokemons(numOfPokemons);
+    console.log(pokemons);
     displayPokemons(pokemons.concat(pokemons));
     isPaused = false;
   }, 100);
 }
 
-resetGame();
+resetGame(selector.value);
+
+selector.addEventListener("change", () => {
+  redrawBoard(selector.value);
+});
