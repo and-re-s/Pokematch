@@ -3,4 +3,4 @@
 * Choose from different board sizes (4x4, 5x5 or 6x6) and test your memory skills. 🧠
 * Can you catch 'em all? 🐱‍🐉🐲🐊  
 
-* <a href="and-re-s.github.io/Pokematch/">Play Pokematch</a>.
+* <a href="http://and-re-s.github.io/Pokematch/">Play Pokematch</a>.
